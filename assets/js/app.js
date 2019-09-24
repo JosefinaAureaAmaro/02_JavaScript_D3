@@ -16,13 +16,17 @@ var height = svgHeight - margin.top - margin.bottom;
 
 // Create an SVG wrapper, append an SVG group that will hold our chart, and shift the latter by left and top margins.
 var svg = d3.select("#scatter")
+  .attr("class", "chart")
   .append("svg")
-  .attr("width", svgWidth)
-  .attr("height", svgHeight);
+  // .attr("width", svgWidth)
+  // .attr("height", svgHeight)
+
+  // applied the viewBox attribute to make the graph responsive
+  .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`) 
+  .attr("preserveAspectRatio", "xMidYMid meet");
 
 var chartGroup = svg.append("g")
   .attr("transform", `translate(${margin.left}, ${margin.top})`);
-
 
 // Step 2: Read CSV data
 // ==============================
@@ -74,7 +78,7 @@ d3.csv("./assets/data/data.csv").then(function(data) {
       // Step 4: Create scale functions
       // ==============================
       var xLinearScale = d3.scaleLinear()
-        .domain([5, d3.max(chartData, d => d.poverty)])
+        .domain([8, d3.max(chartData, d => d.poverty)])
         .range([10, width]);
         
   
@@ -100,8 +104,7 @@ d3.csv("./assets/data/data.csv").then(function(data) {
     // Step 7: Initialize tool tip
     // ==============================
     var toolTip = d3.tip()
-      .attr("class", "tooltip")
-      .attr("text-align","center")
+      .attr("class","d3-tip tooltip")
       .offset([80, -60])
       .html(function(d) {
         return (`<b><u>${d.abbr}</u></b>
@@ -119,58 +122,53 @@ d3.csv("./assets/data/data.csv").then(function(data) {
     // it in the mobility section of our code.
     var circRadius;
     function crGet() {
-    circRadius = 15;
+    circRadius = 20;
     }
     crGet();
 
 
     // Step 9: Create Circles
     // ==============================
+    // To create circles for data point in scatter plot
+    var circlesGroup = chartGroup.selectAll("circle")
+      .data(chartData)
+      .enter()
 
-    // Grouping for our dots and their labels.
-    var circlesGroup = svg.selectAll("g theCircles").data(chartData).enter();
-
-
-    //Step 10: To create circles for data point in scatter plot
-    circlesGroup = chartGroup.selectAll("circle")
-    .data(chartData)
-    .enter()
-    .append("circle")
-    .attr("cx", d => xLinearScale(d.poverty))
-    .attr("cy", d => yLinearScale(d.healthcareHigh))
-    .attr("r", circRadius)
-    .attr("fill", "steelblue")
-    .attr("opacity", ".8")
-    .attr("class", function(d) {
-      return "stateCircle " + d.abbr;})
+    circlesGroup.append("circle")
+      .attr("id", function(d) {
+      return "plot " + d.abbr;})
+      .attr("cx", d => xLinearScale(d.poverty))
+      .attr("cy", d => yLinearScale(d.healthcareHigh))
+      .attr("r", circRadius)
+      // .attr("fill", "steelblue")
+      .attr("opacity", ".8")
+      .attr("class", function(d) {
+        return "stateCircle"})
     // Step 8: Create event listeners to display and hide the tooltip
     // ==============================
     //Hover rules
-    .on("mouseover", function(d) {
-      // Show the tooltip
-      toolTip.show(d, this);
-      // Highlight the state circle's border
-      d3.select(this).style("stroke", d3.color("#000000"));
-    })
-    .on("mouseout", function(d) {
-      // Remove the tooltip
-      toolTip.hide(d);
-      // Remove highlight
-      d3.select(this).style("stroke", "#e3e3e3");
-    });
+      .on("mouseover", function(d) {
+        // Show the tooltip
+        toolTip.show(d, this);
+        // Highlight the state circle's border
+        d3.select(this).style("stroke", d3.color("#000000"));
+      })
+      .on("mouseout", function(d) {
+        // Remove the tooltip
+        toolTip.hide(d);
+        // Remove highlight
+        d3.select(this).style("stroke", "#e3e3e3");
+      });
 
 
 
 
   //Step 11: To append state abbr to circle scatter data points
   // ==============================
-   circlesGroup = chartGroup.selectAll("text")
-    .data(chartData)
-    .enter()
-    .append("text")
+    circlesGroup.append("text")
     // We return the abbreviation to .text, which makes the text the abbreviation.
     .text((d) => {
-      console.log(d.abbr)
+      console.log(d)
       return d.abbr;
     })
     // // Now place the text using our scale.
@@ -183,34 +181,37 @@ d3.csv("./assets/data/data.csv").then(function(data) {
       // pushes it into the middle of the circle.
       return yLinearScale(d["healthcareHigh"]) + circRadius / 2.5;
     })
-    .attr("font-size", 8)
-    .attr("fill","white")
-    .attr("text-anchor","middle");
-
+    .attr("class", "stateText")
+    .attr("font-size", (circRadius/2));
+  
 
 
 
   //Step 12: To create D3 Axes
   // ==============================
   // Create axes labels
-  //// Title Label
+  //// y-axis Label
     chartGroup.append("text")
       .attr("transform", "rotate(-90)")
       .attr("y", 0 - margin.left + 40)
       .attr("x", 0 - (height / 2))
       .attr("dy", "1em")
-      .attr("class", "axisText text-center")
+      .attr("class", "aText")
       .attr("style", "font-weight:bold" )
       .text(" Lacks Healthcare (%)");
 
-    //// X-axis Label
+    //// x-axis Label
     chartGroup.append("text")
       .attr("transform", `translate(${width / 2}, ${height + margin.top + 30})`)
-      .attr("class", "axisText text-center")
+      .attr("class", "aText")
       .attr("style", "font-weight:bold")
       .text("In Poverty (%)");
 
 }); 
+
+
+ // Mobile Responsive
+
 
 
 
@@ -218,3 +219,4 @@ d3.csv("./assets/data/data.csv").then(function(data) {
 // helpful cites
 // Parsing csv data: http://learnjsdata.com/read_data.html
 // removing properties from objects: https://stackoverflow.com/questions/3455405/how-do-i-remove-a-key-from-a-javascript-object
+// adding labels to scatter plots: https://stackoverflow.com/questions/36954426/adding-label-on-a-d3-scatter-plot-circles
