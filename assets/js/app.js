@@ -32,107 +32,97 @@ var chartGroup = svg.append("g")
 // ==============================
 d3.csv("./assets/data/data.csv").then(function(data) {
 
-    // variables 
-    let dataKeys = [];
-    const chartData = [];
+  // variables 
+  let dataKeys = [];
+  const chartData = [];
 
 
-    // to create an array of Keys to be observed 
-        dataKeys = Object.keys(data[0]);
-    // console.log(dataKeys);
-         dataKeys.pop(); // to remove obsecure data point from the keys
-        console.log(dataKeys);
-    // console.log(dataKeys[0]); // to test index of array 
+  // to create an array of Keys to be observed 
+  dataKeys = Object.keys(data[0]);
+  // to remove obsecure data point from the keys
+  dataKeys.pop(); 
 
-    // Step 3: Parse Data/Cast as numbers
-    // ==============================
-        data.forEach(function(d){
-            // to fix data types of the numeric cols 
-            d.id = +d.id; 
-            for (i = 3; i <= dataKeys.length ; i++) {
-             d[dataKeys[i]] = +d[dataKeys[i]];
-            };
+ 
+
+  // Step 3: Parse Data/Cast as numbers
+  // ==============================
+  data.forEach(function(d){
+   // to fix data types of the numeric cols 
+    d.id = +d.id; 
+    for (i = 3; i <= dataKeys.length ; i++) {
+        d[dataKeys[i]] = +d[dataKeys[i]];
+     };
     // to remove obsecure data keys from the object 
-        delete d["-0.385218228"];
-        delete d["undefined"];
-        delete d["columns"];
+    delete d["-0.385218228"];
+    delete d["undefined"];
+    delete d["columns"];
         
-        // console.log(d);
-       chartData.push(d);
+  
+   chartData.push(d);
+  });
+
+ // Step 4: Create scale functions
+ // ==============================
+ var xLinearScale = d3.scaleLinear()
+  .domain([8, d3.max(chartData, d => d.poverty)])
+  .range([10, width]);
+        
+  
+ var yLinearScale = d3.scaleLinear()
+  .domain([0, d3.max(chartData, d => d.healthcareHigh)])
+  .range([height, 0]);
+  
+ // Step 5: Create axis functions
+ // ==============================
+ var bottomAxis = d3.axisBottom(xLinearScale);
+ var leftAxis = d3.axisLeft(yLinearScale);
+
+  
+ // Step 6: Append Axes to the chart
+ // ==============================
+ chartGroup.append("g")
+  .attr("transform", `translate(0, ${height})`)
+  .call(bottomAxis);
+  
+ chartGroup.append("g")
+  .call(leftAxis);
+    
+ // Step 7: Initialize tool tip
+ // ==============================
+ var toolTip = d3.tip()
+  .attr("class","d3-tip tooltip")
+  .offset([80, -60])
+  .html(function(d) {
+    return (`<b><u>${d.abbr}</u></b>
+             <br>Poverty: ${d.poverty}%
+             <br>Healthcare: ${d.healthcareHigh}%`);
     });
 
-
-    // console.log('-----data object--------')
-    // finalized data for chart
-    console.log(`Length of Chart Data: ${chartData.length}`);
-    console.log(chartData);
-
-/**
- * Our Objective is to make a response multi-axis graph for the following items:
- * x-axis: In Poverty(%) | Age (Median) | Household Income (Median)
- * y-axis: Lacks Healthcare (%) | Smokes (%) | Obese (%)
- * 
- * The values will the be the states abbreviations
- */
-  
-      // Step 4: Create scale functions
-      // ==============================
-      var xLinearScale = d3.scaleLinear()
-        .domain([8, d3.max(chartData, d => d.poverty)])
-        .range([10, width]);
-        
-  
-      var yLinearScale = d3.scaleLinear()
-        .domain([0, d3.max(chartData, d => d.healthcareHigh)])
-        .range([height, 0]);
-  
-      // Step 5: Create axis functions
-      // ==============================
-      var bottomAxis = d3.axisBottom(xLinearScale);
-      var leftAxis = d3.axisLeft(yLinearScale);
-
-  
-      // Step 6: Append Axes to the chart
-      // ==============================
-      chartGroup.append("g")
-        .attr("transform", `translate(0, ${height})`)
-        .call(bottomAxis);
-  
-      chartGroup.append("g")
-        .call(leftAxis);
     
-    // Step 7: Initialize tool tip
-    // ==============================
-    var toolTip = d3.tip()
-      .attr("class","d3-tip tooltip")
-      .offset([80, -60])
-      .html(function(d) {
-        return (`<b><u>${d.abbr}</u></b>
-                 <br>Poverty: ${d.poverty}%
-                 <br>Healthcare: ${d.healthcareHigh}%`);
-      });
+ // Step 8: Create tooltip & function for dynamic circle radius for the scatter chart
+ // ==============================
 
-    
-    // Step 8: Create tooltip in the chart
-    // ==============================
-    chartGroup.call(toolTip);
+ // Tooltip
+ chartGroup.call(toolTip);
 
-    // Set the radius for each dot that will appear in the graph.
-    // Note: Making this a function allows us to easily call
-    // it in the mobility section of our code.
-    var circRadius;
-    function crGet() {
+ // Set the radius for each dot that will appear in the graph.
+ var circRadius;
+
+ function crGet() {
     circRadius = 20;
-    }
-    crGet();
+  }
+
+ crGet();
 
 
-    // Step 9: Create Circles
-    // ==============================
-    // To create circles for data point in scatter plot
-    var circlesGroup = chartGroup.selectAll("circle")
-      .data(chartData)
-      .enter()
+ // Step 9: Create Circles
+ // ==============================
+ // To create circles for data point in scatter plot
+
+ // to append "circle" for each item in data
+ var circlesGroup = chartGroup.selectAll("circle")
+  .data(chartData)
+  .enter()
 
     circlesGroup.append("circle")
       .attr("id", function(d) {
@@ -144,7 +134,8 @@ d3.csv("./assets/data/data.csv").then(function(data) {
       .attr("opacity", ".8")
       .attr("class", function(d) {
         return "stateCircle"})
-    // Step 8: Create event listeners to display and hide the tooltip
+    
+    // Step 10: Create event listeners to display and hide the tooltip
     // ==============================
     //Hover rules
       .on("mouseover", function(d) {
@@ -163,26 +154,26 @@ d3.csv("./assets/data/data.csv").then(function(data) {
 
 
 
-  //Step 11: To append state abbr to circle scatter data points
-  // ==============================
+    //Step 11: To append state abbr to circle scatter data points
+    // ==============================
     circlesGroup.append("text")
-    // We return the abbreviation to .text, which makes the text the abbreviation.
-    .text((d) => {
-      console.log(d)
-      return d.abbr;
-    })
-    // // Now place the text using our scale.
-    .attr("dx", function(d) {
-      return xLinearScale(d["poverty"]);
-    })
-    .attr("dy", function(d) {
+      // We return the abbreviation to .text, which makes the text the abbreviation.
+      .text((d) => {
+        return d.abbr;
+        })
+      // Now place the text using our scale.
+      .attr("dx", function(d) {
+        return xLinearScale(d["poverty"]);
+        })
+      .attr("dy", function(d) {
       // When the size of the text is the radius,
       // adding a third of the radius to the height
       // pushes it into the middle of the circle.
-      return yLinearScale(d["healthcareHigh"]) + circRadius / 2.5;
-    })
-    .attr("class", "stateText")
-    .attr("font-size", (circRadius/2));
+        return yLinearScale(d["healthcareHigh"]) + circRadius / 2.5;
+        })
+      .attr("class", "stateText")
+      // Making the font size half of the circle radius applies scale
+      .attr("font-size", (circRadius/2));
   
 
 
@@ -190,27 +181,25 @@ d3.csv("./assets/data/data.csv").then(function(data) {
   //Step 12: To create D3 Axes
   // ==============================
   // Create axes labels
-  //// y-axis Label
-    chartGroup.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 0 - margin.left + 40)
-      .attr("x", 0 - (height / 2))
-      .attr("dy", "1em")
-      .attr("class", "aText")
-      .attr("style", "font-weight:bold" )
-      .text(" Lacks Healthcare (%)");
 
-    //// x-axis Label
-    chartGroup.append("text")
-      .attr("transform", `translate(${width / 2}, ${height + margin.top + 30})`)
-      .attr("class", "aText")
-      .attr("style", "font-weight:bold")
-      .text("In Poverty (%)");
+  // y-axis Label
+  chartGroup.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 0 - margin.left + 40)
+    .attr("x", 0 - (height / 2))
+    .attr("dy", "1em")
+    .attr("class", "aText")
+    .attr("style", "font-weight:bold" )
+    .text(" Lacks Healthcare (%)");
+
+  // x-axis Label
+  chartGroup.append("text")
+    .attr("transform", `translate(${width / 2}, ${height + margin.top + 30})`)
+    .attr("class", "aText")
+    .attr("style", "font-weight:bold")
+    .text("In Poverty (%)");
 
 }); 
-
-
- // Mobile Responsive
 
 
 
